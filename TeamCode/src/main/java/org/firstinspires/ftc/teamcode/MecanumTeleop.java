@@ -25,7 +25,7 @@ public class MecanumTeleop extends LinearOpMode {
 
         IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                RevHubOrientationOnRobot.UsbFacingDirection.FORWARD));
+                RevHubOrientationOnRobot.UsbFacingDirection.LEFT));
 
         imu.initialize(parameters);
 
@@ -57,6 +57,8 @@ public class MecanumTeleop extends LinearOpMode {
             double backRightPower = (rotY + rotX - rx) / denominator;
             double slowSpeed = 5;
 
+            telemetry.addData("Heading", botHeading);
+            telemetry.update();
 
             if (gamepad1.left_bumper) {
                 frontLeftMotor.setPower(frontLeftPower / slowSpeed);
@@ -71,7 +73,14 @@ public class MecanumTeleop extends LinearOpMode {
                 backRightMotor.setPower(backRightPower);
             }
 
-            System.out.println(imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS));
+            if (gamepad1.a) {
+                while (Math.abs(botHeading) > 0.2) {
+                    frontLeftMotor.setPower(5);
+                    backLeftMotor.setPower(5);
+                    frontRightMotor.setPower(-5);
+                    backRightMotor.setPower(-5);
+                }
+            }
         }
     }
 }
