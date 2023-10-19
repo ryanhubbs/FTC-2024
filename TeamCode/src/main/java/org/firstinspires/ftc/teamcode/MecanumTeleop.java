@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
-@TeleOp(name="TeleWop")
+@TeleOp(name="TeleWopy")
 public class MecanumTeleop extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
@@ -18,14 +18,16 @@ public class MecanumTeleop extends LinearOpMode {
         DcMotor frontRightMotor = hardwareMap.dcMotor.get("frontRight");
         DcMotor backRightMotor = hardwareMap.dcMotor.get("backRight");
 
+        DcMotor intakeOne = hardwareMap.dcMotor.get("intakeOne");
+
         frontRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         backRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
         IMU imu = hardwareMap.get(IMU.class, "imu");
 
         IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
-                RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                RevHubOrientationOnRobot.UsbFacingDirection.LEFT));
+                RevHubOrientationOnRobot.LogoFacingDirection.DOWN,
+                RevHubOrientationOnRobot.UsbFacingDirection.RIGHT));
 
         imu.initialize(parameters);
 
@@ -37,6 +39,8 @@ public class MecanumTeleop extends LinearOpMode {
             double y = gamepad1.left_stick_y;
             double x = gamepad1.left_stick_x;
             double rx = gamepad1.right_stick_x;
+
+            double o_ly = gamepad2.left_stick_y;
 
             if (gamepad1.start) {
                 imu.resetYaw();
@@ -58,7 +62,6 @@ public class MecanumTeleop extends LinearOpMode {
             double slowSpeed = 5;
 
             telemetry.addData("Heading", botHeading);
-            telemetry.update();
 
             if (gamepad1.left_bumper) {
                 frontLeftMotor.setPower(frontLeftPower / slowSpeed);
@@ -81,6 +84,17 @@ public class MecanumTeleop extends LinearOpMode {
                     backRightMotor.setPower(-5);
                 }
             }
+
+            if (o_ly > 0.1 || o_ly < -0.1) {
+                intakeOne.setPower(o_ly / 4);
+            } else {
+                intakeOne.setPower(0);
+            }
+
+            telemetry.addData("Arm One Speed", o_ly);
+            telemetry.addData("Arm One Angle", intakeOne.getCurrentPosition());
+            telemetry.update();
         }
+
     }
 }
