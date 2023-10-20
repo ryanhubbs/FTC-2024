@@ -8,6 +8,8 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
+import org.firstinspires.ftc.teamcode.Constants;
+
 @TeleOp(name="TeleWopy")
 public class MecanumTeleop extends LinearOpMode {
     @Override
@@ -31,6 +33,9 @@ public class MecanumTeleop extends LinearOpMode {
 
         imu.initialize(parameters);
 
+        double AUTO_ALIGN_RANGE = Constants.AUTO_ALIGN_RANGE;
+        double AUTO_ALIGN_SPEED = Constants.AUTO_ALIGN_SPEED * Constants.AUTO_ALIGN_SPEED_MULTIPLIER;
+
         waitForStart();
 
         if (isStopRequested()) return;
@@ -47,6 +52,7 @@ public class MecanumTeleop extends LinearOpMode {
             }
 
             double botHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
+            double botHeadingDeg = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
 
 
             double rotX = x * Math.cos(-botHeading) - y * Math.sin(-botHeading);
@@ -77,17 +83,35 @@ public class MecanumTeleop extends LinearOpMode {
             }
 
             if (gamepad1.a) {
-                while (Math.abs(botHeading) > 0.2) {
-                    frontLeftMotor.setPower(5);
-                    backLeftMotor.setPower(5);
-                    frontRightMotor.setPower(-5);
-                    backRightMotor.setPower(-5);
+                while (!((360 - AUTO_ALIGN_RANGE) <= Abs(botHeadingDeg)) ||   // if robot rotated left within range
+                    !(Abs(botHeadingDeg) <= AUTO_ALIGN_RANGE))                // if robot rotated right within range
+                {
+                    frontLeftMotor.setPower(AUTO_ALIGN_SPEED);
+                    backLeftMotor.setPower(AUTO_ALIGN_SPEED);
+                    frontRightMotor.setPower(-AUTO_ALIGN_SPEED);
+                    backRightMotor.setPower(-AUTO_ALIGN_SPEED);
+
+                    telemetry.addData("Aligning", true);
+                    telemetry.update();
                 }
+                frontLeftMotor.setPower(0);
+                backLeftMotor.setPower(0);
+                frontRightMotor.setPower(0);
+                backRightMotor.setPower(0);
+                
+                telemetry.addData("Aligning", false);
             }
 
-            if (o_ly > 0.1 || o_ly < -0.1) {
+            double intakeOnePos = intakeOne.getCurrentPosition();
+
+            if  ( 
+                    (o_ly > 0.1 || o_ly < -0.1) && 
+                    (intakeOnePos > Constants.ONE_MIN && intakeOnePos < Constants.ONE_MAX)
+                )
+            {
                 intakeOne.setPower(o_ly / 4);
-            } else {
+            } 
+            else {
                 intakeOne.setPower(0);
             }
 
