@@ -101,8 +101,8 @@ public class MecanumTeleop extends LinearOpMode {
             }
 
             if (gamepad1.a) { // loops until robot is within AUTO_ALIGN_RANGE of the IMU zero 
-                while (!((360 - AUTO_ALIGN_RANGE) <= Abs(botHeadingDeg)) ||     // if robot rotated left within range
-                    !(Abs(botHeadingDeg) <= AUTO_ALIGN_RANGE))                  // if robot rotated right within range
+                while (!((360 - AUTO_ALIGN_RANGE) <= Math.abs(botHeadingDeg)) ||     // if robot rotated left within range
+                    !(Math.abs(botHeadingDeg) <= AUTO_ALIGN_RANGE))                  // if robot rotated right within range
                 { // sets motor power based off constants
                     frontLeftMotor.setPower(AUTO_ALIGN_SPEED);
                     backLeftMotor.setPower(AUTO_ALIGN_SPEED);
