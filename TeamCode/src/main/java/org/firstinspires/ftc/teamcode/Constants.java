@@ -1,14 +1,22 @@
 package org.firstinspires.ftc.teamcode;
 
 public class Constants {
-    // Joint One Constants
-    double ONE_MIN = 0;
-    double ONE_MAX = 360;
+    // GENERAL CONFIG
+    public static boolean MOVE_ON_INIT = true;
 
+    // DRIVETRAIN
+    public static double SLOW_MULTIPLIER = 8;
 
-    // Auto Align Constnts
-    double AUTO_ALIGN_RANGE = 7;
-    double AUTO_ALIGN_SPEED = 0.5;
-    double AUTO_ALIGN_SPEED_MULTIPIER = 1;
+    // ARM
+    public static double ARM_SPEED_MULTIPLIER = 8;
+
+    // CLAW
+    public static double CLAW_OPEN = 0;
+    public static double CLAW_CLOSED = 1;
+
+    // PRESETS
+    public static double PRESET_STOW = 0;
+    public static double PRESET_INTAKE = 1;
+    public static double PRESET_SCORE = 0.6;
     
 }

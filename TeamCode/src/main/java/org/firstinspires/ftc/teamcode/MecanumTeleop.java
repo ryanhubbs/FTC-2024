@@ -6,32 +6,39 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+
+import org.firstinspires.ftc.robotcore.external.Const;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.Constants;
 
-@TeleOp(name = "TeleWopy")
+@TeleOp(name = "TeleWopyy")
 public class MecanumTeleop extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
-        // define motors from driver hub config
+        // defines hardware
         DcMotor frontLeftMotor = hardwareMap.dcMotor.get("frontLeft");
         DcMotor backLeftMotor = hardwareMap.dcMotor.get("backLeft");
         DcMotor frontRightMotor = hardwareMap.dcMotor.get("frontRight");
         DcMotor backRightMotor = hardwareMap.dcMotor.get("backRight");
 
-        DcMotor intakeOne = hardwareMap.dcMotor.get("intakeOne");
+        DcMotor armMotor = hardwareMap.dcMotor.get("intakeOne");
+        Servo clawServo = hardwareMap.servo.get("clawServo");
+        Servo wristServo = hardwareMap.servo.get("wristServo");
+
 
         frontRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         backRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        frontLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODERS);
-        frontRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODERS);
-        backLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODERS);
-        backRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODERS);
+        frontLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        frontRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        backLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        backRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
+        armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-        // imu built into control hub
         IMU imu = hardwareMap.get(IMU.class, "imu");
 
         IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
@@ -40,105 +47,81 @@ public class MecanumTeleop extends LinearOpMode {
 
         imu.initialize(parameters);
 
-        // auto align constants
-        double AUTO_ALIGN_RANGE = Constants.AUTO_ALIGN_RANGE;
-        double AUTO_ALIGN_SPEED = Constants.AUTO_ALIGN_SPEED * Constants.AUTO_ALIGN_SPEED_MULTIPLIER;
-        waitForStart();
+        String CURRENT_PRESET = "STOW";
+        String CLAW_STATE = "CLOSED";
+        if (Constants.MOVE_ON_INIT) {
+            clawServo.setPosition(Constants.CLAW_CLOSED);
+            wristServo.setPosition(Constants.PRESET_STOW);
+        }
+
+        // init finishes here
+        waitForStart(); // wait for start button on driver hub
 
         if (isStopRequested()) return;
 
         // teleop mode starts
         while (opModeIsActive()) {
-            // driver stuff
-            double y = gamepad1.left_stick_y;
-            double x = gamepad1.left_stick_x;
-            double rx = gamepad1.right_stick_x;
+            // driver sticks
+            double d_y = gamepad1.left_stick_y;
+            double d_x = gamepad1.left_stick_x * 1.1;
+            double d_rx = gamepad1.right_stick_x;
 
-            // operator stuff
+            // operator sticks
             double o_ly = gamepad2.left_stick_y;
+            double o_ry = gamepad2.right_stick_y;
 
 
-            // zero imu yaw axis
-            if (gamepad1.start) {
-                imu.resetYaw();
+            // DRIVER KEYS
+            double denominator = Math.max(Math.abs(d_y) + Math.abs(d_x) + Math.abs(d_rx), 1);
+            double frontLeftPower = (d_y + d_x + d_rx) / denominator;
+            double backLeftPower = (d_y - d_x + d_rx) / denominator;
+            double frontRightPower = (d_y - d_x - d_rx) / denominator;
+            double backRightPower = (d_y + d_x - d_rx) / denominator;
+            double DRIVETRAIN_MULTIPLIER = 1;
+
+            if (gamepad1.left_bumper) { // if the left bumper is held then divide motor speeds by Constants.DRIVETRAIN_MULTIPLIER
+                DRIVETRAIN_MULTIPLIER = Constants.SLOW_MULTIPLIER;
             }
 
-            // variables for robot imu heading
-            double botHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
-            double botHeadingDeg = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+            // assign each motor their speeds
+            frontLeftMotor.setPower(frontLeftPower / DRIVETRAIN_MULTIPLIER);
+            backLeftMotor.setPower(backLeftPower / DRIVETRAIN_MULTIPLIER);
+            frontRightMotor.setPower(frontRightPower / DRIVETRAIN_MULTIPLIER);
+            backRightMotor.setPower(backRightPower / DRIVETRAIN_MULTIPLIER);
 
 
-            // math for field centric drive
-            double rotX = x * Math.cos(-botHeading) - y * Math.sin(-botHeading);
-            double rotY = x * Math.sin(-botHeading) + y * Math.cos(-botHeading);
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-            rotX = rotX * 1.1;
-
-            double denominator = Math.max(Math.abs(rotY) + Math.abs(rotX) + Math.abs(rx), 1);
-            double frontLeftPower = (rotY + rotX + rx) / denominator;
-            double backLeftPower = (rotY - rotX + rx) / denominator;
-            double frontRightPower = (rotY - rotX - rx) / denominator;
-            double backRightPower = (rotY + rotX - rx) / denominator;
-            double slowSpeed = 5;
-
-            // display encoder values for drivetrain
-            telemetry.addData("Front Left Encoder", frontLeftMotor.getCurrentPosition());
-            telemetry.addData("Front Right Encoder", frontRightMotor.getCurrentPosition());
-            telemetry.addData("Back Left Encoder", backLeftMotor.getCurrentPosition());
-            telemetry.addData("Back Right Encoder", backRightMotor.getCurrentPosition());
-
-            // slow multiplier button
-            if (gamepad1.left_bumper) {
-                frontLeftMotor.setPower(frontLeftPower / slowSpeed);
-                backLeftMotor.setPower(backLeftPower / slowSpeed);
-                frontRightMotor.setPower(frontRightPower / slowSpeed);
-                backRightMotor.setPower(backRightPower / slowSpeed);
-            } else { // button not pressed so dont slow
-                frontLeftMotor.setPower(frontLeftPower);
-                backLeftMotor.setPower(backLeftPower);
-                frontRightMotor.setPower(frontRightPower);
-                backRightMotor.setPower(backRightPower);
+            // OPERATOR KEYS
+            // armMotor
+            if (o_ly < -0.1 || o_ly > 0.1) {
+                armMotor.setPower(o_ly / Constants.ARM_SPEED_MULTIPLIER);
             }
 
-            if (gamepad1.a) { // loops until robot is within AUTO_ALIGN_RANGE of the IMU zero 
-                while (!((360 - AUTO_ALIGN_RANGE) <= Abs(botHeadingDeg)) ||     // if robot rotated left within range
-                    !(Abs(botHeadingDeg) <= AUTO_ALIGN_RANGE))                  // if robot rotated right within range
-                { // sets motor power based off constants
-                    frontLeftMotor.setPower(AUTO_ALIGN_SPEED);
-                    backLeftMotor.setPower(AUTO_ALIGN_SPEED);
-                    frontRightMotor.setPower(-AUTO_ALIGN_SPEED);
-                    backRightMotor.setPower(-AUTO_ALIGN_SPEED);
-
-                    telemetry.addData("Aligning", true);
-                    telemetry.update();
-                }
-                // robot reached goal
-                frontLeftMotor.setPower(0);
-                backLeftMotor.setPower(0);
-                frontRightMotor.setPower(0);
-                backRightMotor.setPower(0);
-
-                telemetry.addData("Aligning", false);
+            // claw open / closing
+            if (gamepad2.a) {
+                clawServo.setPosition(Constants.CLAW_OPEN);
+                CLAW_STATE = "OPEN";
+            } else if (gamepad2.b) {
+                clawServo.setPosition(Constants.CLAW_CLOSED);
+                CLAW_STATE = "CLOSED";
             }
 
-            // current position of joint 1 on the intake arm
-            double intakeOnePos = intakeOne.getCurrentPosition();
-
-            if ( // if operator left stick is within deadzone
-                (o_ly > 0.1 || o_ly < -0.1)
-            ) {
-                if (o_ly < 0 && intakeOnePos < Constants.ONE_MAX) {
-                    intakeOne.setPower(o_ly / Constants.ONE_SPEED_MULTIPLIER);
-                } else if (o_ly > 0 && intakeOnePos > Constants.ONE_MIN) {
-                    intakeOne.setPower(o_ly / Constants.ONE_SPEED_MULTIPLIER);
-                }
-                
-            } else {
-                intakeOne.setPower(0);
+            // claw wrist presets
+            if (gamepad2.dpad_down) {
+                wristServo.setPosition(Constants.PRESET_INTAKE);
+                CURRENT_PRESET = "INTAKE";
+            } else if (gamepad2.dpad_left) {
+                wristServo.setPosition(Constants.PRESET_STOW);
+                CURRENT_PRESET = "STOW";
+            } else if (gamepad2.dpad_right) {
+                wristServo.setPosition((Constants.PRESET_SCORE));
+                CURRENT_PRESET = "SCORE";
             }
 
-            telemetry.addData("Arm One Speed", o_ly);
-            telemetry.addData("Arm One Angle", intakeOne.getCurrentPosition());
+
+            telemetry.addData("Intake Preset", CURRENT_PRESET);
+            telemetry.addData("Claw State", CLAW_STATE);
             telemetry.update();
         }
 
