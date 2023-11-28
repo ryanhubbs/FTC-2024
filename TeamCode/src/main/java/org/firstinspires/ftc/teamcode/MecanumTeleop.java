@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 
 import org.firstinspires.ftc.robotcore.external.Const;
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -37,7 +38,6 @@ public class MecanumTeleop extends LinearOpMode {
         backRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         IMU imu = hardwareMap.get(IMU.class, "imu");
 
@@ -94,9 +94,30 @@ public class MecanumTeleop extends LinearOpMode {
 
             // OPERATOR KEYS
             // armMotor
-            if (o_ly < -0.1 || o_ly > 0.1) {
-                armMotor.setPower(o_ly / Constants.ARM_SPEED_MULTIPLIER);
+//            if (gamepad2.y) {
+//                armMotor.setPower(-0.25);
+//            } else if (gamepad2.x) {
+//                armMotor.setPower(0.25);
+//            } else {
+//                armMotor.setPower(0);
+//            }
+
+            if (gamepad2.left_trigger > 0) {
+                armMotor.setPower(0.5 * gamepad2.left_trigger);
+            } else {
+                armMotor.setPower(0);
             }
+
+            if (gamepad2.right_trigger > 0) {
+                armMotor.setPower(-0.75 * gamepad2.right_trigger);
+            } else {
+                armMotor.setPower(0);
+            }
+//            } else {
+//                armMotor.setPower(0);
+//            }
+
+            telemetry.addData("Arm Speed", o_ry / 1.5);
 
             // claw open / closing
             if (gamepad2.a) {
@@ -119,7 +140,7 @@ public class MecanumTeleop extends LinearOpMode {
                 CURRENT_PRESET = "SCORE";
             }
 
-
+            telemetry.addData("Wrist Position", wristServo.getPosition());
             telemetry.addData("Intake Preset", CURRENT_PRESET);
             telemetry.addData("Claw State", CLAW_STATE);
             telemetry.update();
