@@ -37,7 +37,7 @@ public class MecanumTeleop extends LinearOpMode {
         backLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         backRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         IMU imu = hardwareMap.get(IMU.class, "imu");
 
@@ -60,6 +60,8 @@ public class MecanumTeleop extends LinearOpMode {
         if (isStopRequested()) return;
 
         // teleop mode starts
+        //armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         while (opModeIsActive()) {
             // driver sticks
             double d_y = gamepad1.left_stick_y;
@@ -138,6 +140,13 @@ public class MecanumTeleop extends LinearOpMode {
             } else if (gamepad2.dpad_right) {
                 wristServo.setPosition((Constants.PRESET_SCORE));
                 CURRENT_PRESET = "SCORE";
+            }
+
+            if (gamepad2.x) {
+                armMotor.setTargetPosition(180);
+                //armMotor.setPower(0.5);
+//                if (Math.abs(armMotor.getTargetPosition() - armMotor.getCurrentPosition()) < 4) {
+//                };
             }
 
             telemetry.addData("Wrist Position", wristServo.getPosition());
