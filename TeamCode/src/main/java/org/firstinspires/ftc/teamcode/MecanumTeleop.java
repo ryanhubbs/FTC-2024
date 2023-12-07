@@ -16,46 +16,62 @@ import org.firstinspires.ftc.teamcode.Constants;
 
 @TeleOp(name = "TeleWopyy")
 public class MecanumTeleop extends LinearOpMode {
+
     @Override
     public void runOpMode() throws InterruptedException {
-        // defines hardware
+
+        // Defines the drivetrain motors.
         DcMotor frontLeftMotor = hardwareMap.dcMotor.get("frontLeft");
         DcMotor backLeftMotor = hardwareMap.dcMotor.get("backLeft");
         DcMotor frontRightMotor = hardwareMap.dcMotor.get("frontRight");
         DcMotor backRightMotor = hardwareMap.dcMotor.get("backRight");
 
+        // Defines the arm/wrist servos and motor.
         DcMotor armMotor = hardwareMap.dcMotor.get("intakeOne");
         Servo clawServo = hardwareMap.servo.get("clawServo");
         Servo wristServo = hardwareMap.servo.get("wristServo");
+        Servo forarmServo = hardwareMap.servo.get("middleArmServo");
 
-
+        // Flip right front and right back motors directions.
         frontRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         backRightMotor.setDirection(DcMotorSimple.Direction.REVERSE);
 
+        // Set motors to run using encoder.
         frontLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         frontRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         backLeftMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         backRightMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
+        // set arm motor to stop and reset run mode.
         armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
+        // Set the imu.
         IMU imu = hardwareMap.get(IMU.class, "imu");
 
+        // Create new imu params using RevHubBasedOrientation.
         IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.DOWN,
                 RevHubOrientationOnRobot.UsbFacingDirection.RIGHT));
 
+        // Initialize imu params.
         imu.initialize(parameters);
 
-        String CURRENT_PRESET = "STOW";
+        // Set the current
+        String currentForearmPreset = "STOW";
+        String currentWristPreset = "STOW";
         String CLAW_STATE = "CLOSED";
+
+
         if (Constants.MOVE_ON_INIT) {
+            forarmServo.setPosition(Constants.PRESET_F_STOW_POS);
+            wristServo.setPosition(Constants.PRESET_W_STOW_POS);
             clawServo.setPosition(Constants.CLAW_CLOSED);
-            wristServo.setPosition(Constants.PRESET_STOW);
         }
 
-        // init finishes here
-        waitForStart(); // wait for start button on driver hub
+        // Initialization finishes here
+
+        // wait for start button on driver hub
+        waitForStart();
 
         if (isStopRequested()) return;
 
@@ -68,7 +84,7 @@ public class MecanumTeleop extends LinearOpMode {
             double d_x = gamepad1.left_stick_x * 1.1;
             double d_rx = gamepad1.right_stick_x;
 
-            // operator sticks
+            // Operator sticks
             double o_ly = gamepad2.left_stick_y;
             double o_ry = gamepad2.right_stick_y;
 
@@ -81,29 +97,18 @@ public class MecanumTeleop extends LinearOpMode {
             double backRightPower = (d_y + d_x - d_rx) / denominator;
             double DRIVETRAIN_MULTIPLIER = 1;
 
-            if (gamepad1.left_bumper) { // if the left bumper is held then divide motor speeds by Constants.DRIVETRAIN_MULTIPLIER
+            // if the left bumper is held then divide motor speeds by Constants.DRIVETRAIN_MULTIPLIER
+            if (gamepad1.left_bumper) {
                 DRIVETRAIN_MULTIPLIER = Constants.SLOW_MULTIPLIER;
             }
 
-            // assign each motor their speeds
+            // Assign each motor their speeds.
             frontLeftMotor.setPower(frontLeftPower / DRIVETRAIN_MULTIPLIER);
             backLeftMotor.setPower(backLeftPower / DRIVETRAIN_MULTIPLIER);
             frontRightMotor.setPower(frontRightPower / DRIVETRAIN_MULTIPLIER);
             backRightMotor.setPower(backRightPower / DRIVETRAIN_MULTIPLIER);
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-            // OPERATOR KEYS
-            // armMotor
-//            if (gamepad2.y) {
-//                armMotor.setPower(-0.25);
-//            } else if (gamepad2.x) {
-//                armMotor.setPower(0.25);
-//            } else {
-//                armMotor.setPower(0);
-//            }
-
+            // Check for buttons down and move the humerous by a multiplier times the direction.
             if (gamepad2.left_trigger > 0) {
                 armMotor.setPower(0.5 * gamepad2.left_trigger);
             } else {
@@ -115,9 +120,6 @@ public class MecanumTeleop extends LinearOpMode {
             } else {
                 armMotor.setPower(0);
             }
-//            } else {
-//                armMotor.setPower(0);
-//            }
 
             telemetry.addData("Arm Speed", o_ry / 1.5);
 
@@ -130,27 +132,36 @@ public class MecanumTeleop extends LinearOpMode {
                 CLAW_STATE = "CLOSED";
             }
 
-            // claw wrist presets
+            // Check for buttons down and then trigger certain presets.
             if (gamepad2.dpad_down) {
-                wristServo.setPosition(Constants.PRESET_INTAKE);
-                CURRENT_PRESET = "INTAKE";
-            } else if (gamepad2.dpad_left) {
-                wristServo.setPosition(Constants.PRESET_STOW);
-                CURRENT_PRESET = "STOW";
-            } else if (gamepad2.dpad_right) {
-                wristServo.setPosition((Constants.PRESET_SCORE));
-                CURRENT_PRESET = "SCORE";
+                wristServo.setPosition(Constants.PRESET_W_INTAKE_POS);
+                forarmServo.setPosition(Constants.PRESET_F_INTAKE_POS);
+                currentForearmPreset = "INTAKE";
+                currentWristPreset = "INTAKE";
+            }
+
+            else if (gamepad2.dpad_left) {
+                wristServo.setPosition(Constants.PRESET_W_STOW_POS);
+                forarmServo.setPosition(Constants.PRESET_F_STOW_POS);
+                currentForearmPreset = "STOW";
+                currentWristPreset = "STOW";
+            }
+
+            else if (gamepad2.dpad_right) {
+                forarmServo.setPosition(Constants.PRESET_F_SCORE);
+                wristServo.setPosition(Constants.PRESET_W_SCORE);
+                currentForearmPreset = "SCORE";
+                currentWristPreset = "SCORE";
             }
 
             if (gamepad2.x) {
                 armMotor.setTargetPosition(180);
-                //armMotor.setPower(0.5);
-//                if (Math.abs(armMotor.getTargetPosition() - armMotor.getCurrentPosition()) < 4) {
-//                };
             }
 
             telemetry.addData("Wrist Position", wristServo.getPosition());
-            telemetry.addData("Intake Preset", CURRENT_PRESET);
+            telemetry.addData("Wrist Preset", currentWristPreset);
+            telemetry.addData("Forearm Position", forarmServo.getPosition());
+            telemetry.addData("Forearm Preset", currentForearmPreset);
             telemetry.addData("Claw State", CLAW_STATE);
             telemetry.update();
         }
