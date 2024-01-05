@@ -91,17 +91,7 @@ public class MecanumTeleop extends LinearOpMode {
             backRightMotor.setPower(backRightPower / DRIVETRAIN_MULTIPLIER);
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
 
-            // OPERATOR KEYS
-            // armMotor
-//            if (gamepad2.y) {
-//                armMotor.setPower(-0.25);
-//            } else if (gamepad2.x) {
-//                armMotor.setPower(0.25);
-//            } else {
-//                armMotor.setPower(0);
-//            }
 
               if (o_ly < 0.1) {
                   armMotor.setPower(-Math.pow(Math.abs(o_ly), 3.0));
@@ -110,20 +100,6 @@ public class MecanumTeleop extends LinearOpMode {
               } else {
                   armMotor.setPower(0.0);
               }
-//            if (gamepad2.left_trigger > 0) {
-//                armMotor.setPower(0.5 * gamepad2.left_trigger);
-//            } else {
-//                armMotor.setPower(0);
-//            }
-//
-//            if (gamepad2.right_trigger > 0) {
-//                armMotor.setPower(-0.75 * gamepad2.right_trigger);
-//            } else {
-//                armMotor.setPower(0);
-//            }
-//            } else {
-//                armMotor.setPower(0);
-//            }
 
             telemetry.addData("Arm Speed", o_ry / 1.5);
 
@@ -139,6 +115,7 @@ public class MecanumTeleop extends LinearOpMode {
             // claw wrist presets
             if (gamepad2.dpad_down) {
                 wristServo.setPosition(Constants.PRESET_INTAKE);
+                
                 CURRENT_PRESET = "INTAKE";
             } else if (gamepad2.dpad_left) {
                 wristServo.setPosition(Constants.PRESET_STOW);
@@ -152,9 +129,7 @@ public class MecanumTeleop extends LinearOpMode {
                 armMotor.setTargetPosition(180);
                 armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
                 telemetry.addData("Locked Position", true);
-                //armMotor.setPower(0.5);
-//                if (Math.abs(armMotor.getTargetPosition() - armMotor.getCurrentPosition()) < 4) {
-//                };
+
             } else {
                 armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             }
