@@ -61,7 +61,6 @@ public class MecanumTeleop extends LinearOpMode {
 
         // teleop mode starts
         //armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         while (opModeIsActive()) {
             // driver sticks
             double d_y = gamepad1.left_stick_y;
@@ -104,17 +103,24 @@ public class MecanumTeleop extends LinearOpMode {
 //                armMotor.setPower(0);
 //            }
 
-            if (gamepad2.left_trigger > 0) {
-                armMotor.setPower(0.5 * gamepad2.left_trigger);
-            } else {
-                armMotor.setPower(0);
-            }
-
-            if (gamepad2.right_trigger > 0) {
-                armMotor.setPower(-0.75 * gamepad2.right_trigger);
-            } else {
-                armMotor.setPower(0);
-            }
+              if (o_ly < 0.1) {
+                  armMotor.setPower(-Math.pow(Math.abs(o_ly), 3.0));
+              } else if (o_ly > 0.1) {
+                  armMotor.setPower(Math.pow(o_ly, 3 f.0));
+              } else {
+                  armMotor.setPower(0.0);
+              }
+//            if (gamepad2.left_trigger > 0) {
+//                armMotor.setPower(0.5 * gamepad2.left_trigger);
+//            } else {
+//                armMotor.setPower(0);
+//            }
+//
+//            if (gamepad2.right_trigger > 0) {
+//                armMotor.setPower(-0.75 * gamepad2.right_trigger);
+//            } else {
+//                armMotor.setPower(0);
+//            }
 //            } else {
 //                armMotor.setPower(0);
 //            }
@@ -144,11 +150,16 @@ public class MecanumTeleop extends LinearOpMode {
 
             if (gamepad2.x) {
                 armMotor.setTargetPosition(180);
+                armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                telemetry.addData("Locked Position", true);
                 //armMotor.setPower(0.5);
 //                if (Math.abs(armMotor.getTargetPosition() - armMotor.getCurrentPosition()) < 4) {
 //                };
+            } else {
+                armMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             }
 
+            telemetry.addData("Arm Power Input", Math.pow(o_ly, 3.0));
             telemetry.addData("Wrist Position", wristServo.getPosition());
             telemetry.addData("Intake Preset", CURRENT_PRESET);
             telemetry.addData("Claw State", CLAW_STATE);
